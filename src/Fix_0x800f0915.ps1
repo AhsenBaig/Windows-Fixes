@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Full automated repair workflow for DISM error 0x800f0915.
     Includes:
@@ -40,11 +40,25 @@ param(
 # -----------------------------
 $logPath = "$PSScriptRoot\Fix_0x800f0915_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
 Start-Transcript -Path $logPath -Force | Out-Null
-Write-Host "Logging to: $logPath" -ForegroundColor DarkGray
+[System.Console]::ForegroundColor = [System.ConsoleColor]::DarkGray
+Write-Output "Logging to: $logPath"
+[System.Console]::ResetColor()
 
-function Write-Info($msg)  { Write-Host "[INFO]  $msg" -ForegroundColor Cyan }
-function Write-Warn($msg)  { Write-Host "[WARN]  $msg" -ForegroundColor Yellow }
-function Write-ErrorMsg($msg) { Write-Host "[ERROR] $msg" -ForegroundColor Red }
+function Write-Info($msg)  {
+    [System.Console]::ForegroundColor = [System.ConsoleColor]::Cyan
+    Write-Output "[INFO]  $msg"
+    [System.Console]::ResetColor()
+}
+function Write-Warn($msg)  {
+    [System.Console]::ForegroundColor = [System.ConsoleColor]::Yellow
+    Write-Output "[WARN]  $msg"
+    [System.Console]::ResetColor()
+}
+function Write-ErrorMsg($msg) {
+    [System.Console]::ForegroundColor = [System.ConsoleColor]::Red
+    Write-Output "[ERROR] $msg"
+    [System.Console]::ResetColor()
+}
 
 # -----------------------------
 # 1. Admin Check
@@ -159,13 +173,14 @@ if ($DryRun) {
     Write-Info "Running DISM repair..."
 
     if ($sourceType -eq "WIM") {
-        $cmd = "DISM /Online /Cleanup-Image /RestoreHealth /Source:$sourcePath:$index /LimitAccess"
+        $source = "${sourcePath}:$index"
+        Write-Info "Executing: DISM /Online /Cleanup-Image /RestoreHealth /Source:$source /LimitAccess"
+        & DISM /Online /Cleanup-Image /RestoreHealth /Source:$source /LimitAccess
     } else {
-        $cmd = "DISM /Online /Cleanup-Image /RestoreHealth /Source:ESD:$sourcePath:$index /LimitAccess"
+        $source = "ESD:${sourcePath}:$index"
+        Write-Info "Executing: DISM /Online /Cleanup-Image /RestoreHealth /Source:$source /LimitAccess"
+        & DISM /Online /Cleanup-Image /RestoreHealth /Source:$source /LimitAccess
     }
-
-    Write-Info "Executing: $cmd"
-    Invoke-Expression $cmd
 }
 
 # -----------------------------
