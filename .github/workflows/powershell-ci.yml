@@ -84,9 +84,9 @@ jobs:
             Import-Module .\WindowsFixes.psm1 -ErrorAction Stop
             Write-Host "✓ Module imported successfully" -ForegroundColor Green
             
-            # Test Get-AvailableFixes function
-            Write-Host "`nTesting Get-AvailableFixes..." -ForegroundColor Cyan
-            $fixes = Get-AvailableFixes
+            # Test Get-AvailableFix function
+            Write-Host "`nTesting Get-AvailableFix..." -ForegroundColor Cyan
+            $fixes = Get-AvailableFix
             if ($fixes) {
                 Write-Host "✓ Found $($fixes.Count) fix(es):" -ForegroundColor Green
                 $fixes | Format-Table -AutoSize
