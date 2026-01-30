@@ -76,7 +76,7 @@ $RunStep6 = Read-Host "Do you want to run Step 6: Check Proxy Settings? (Y/N)"
 if ($RunStep6 -eq "Y") {
     # Step 6: Check Proxy Settings
     # You can't change the proxy settings directly through PowerShell. It's better to do it manually or guide the user.
-    Write-Host "Please check your proxy settings manually and ensure that they are turned off."
+    Write-Output "Please check your proxy settings manually and ensure that they are turned off."
 }
 
 $Reboot = Read-Host "Do you want to initiate a reboot? (Y/N)"
