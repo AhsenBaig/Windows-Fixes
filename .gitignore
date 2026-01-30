@@ -1,0 +1,29 @@
+# PowerShell log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*_backup
+
+# Windows thumbnails
+Thumbs.db
+
+# macOS files
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test results
+TestResults/
+*.trx
+
+# PowerShell module build artifacts
+*.nupkg

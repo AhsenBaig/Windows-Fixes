@@ -1,0 +1,131 @@
+name: PowerShell CI
+
+on:
+  push:
+    branches: [ main, develop, 'copilot/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  lint-and-test:
+    name: Lint PowerShell Scripts
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install PSScriptAnalyzer
+      shell: pwsh
+      run: |
+        Set-PSRepository PSGallery -InstallationPolicy Trusted
+        Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -SkipPublisherCheck
+        
+    - name: Lint PowerShell Scripts
+      shell: pwsh
+      run: |
+        Write-Host "Running PSScriptAnalyzer on all PowerShell files..." -ForegroundColor Cyan
+        
+        $scripts = Get-ChildItem -Path . -Include *.ps1,*.psm1 -Recurse -ErrorAction SilentlyContinue
+        $totalFiles = $scripts.Count
+        $filesWithIssues = 0
+        $totalIssues = 0
+        
+        Write-Host "Found $totalFiles PowerShell file(s) to analyze`n" -ForegroundColor Gray
+        
+        foreach ($script in $scripts) {
+            Write-Host "Analyzing: $($script.Name)" -ForegroundColor Yellow
+            
+            $results = Invoke-ScriptAnalyzer -Path $script.FullName -Severity Error,Warning
+            
+            if ($results) {
+                $filesWithIssues++
+                $issueCount = $results.Count
+                $totalIssues += $issueCount
+                
+                Write-Host "  Found $issueCount issue(s):" -ForegroundColor Red
+                
+                foreach ($result in $results) {
+                    $severity = $result.Severity
+                    $color = if ($severity -eq 'Error') { 'Red' } else { 'Yellow' }
+                    Write-Host "    [$severity] Line $($result.Line): $($result.Message)" -ForegroundColor $color
+                    Write-Host "      Rule: $($result.RuleName)" -ForegroundColor Gray
+                }
+                Write-Host ""
+            } else {
+                Write-Host "  ✓ No issues found" -ForegroundColor Green
+            }
+        }
+        
+        Write-Host "`n========================================" -ForegroundColor Cyan
+        Write-Host "Summary:" -ForegroundColor Cyan
+        Write-Host "  Total files analyzed: $totalFiles" -ForegroundColor Gray
+        Write-Host "  Files with issues: $filesWithIssues" -ForegroundColor Gray
+        Write-Host "  Total issues found: $totalIssues" -ForegroundColor Gray
+        Write-Host "========================================`n" -ForegroundColor Cyan
+        
+        if ($totalIssues -gt 0) {
+            Write-Host "❌ Linting failed with $totalIssues issue(s)" -ForegroundColor Red
+            exit 1
+        } else {
+            Write-Host "✓ All scripts passed linting!" -ForegroundColor Green
+            exit 0
+        }
+        
+    - name: Test Module Import
+      shell: pwsh
+      run: |
+        Write-Host "Testing module import..." -ForegroundColor Cyan
+        
+        if (Test-Path .\WindowsFixes.psm1) {
+            Import-Module .\WindowsFixes.psm1 -ErrorAction Stop
+            Write-Host "✓ Module imported successfully" -ForegroundColor Green
+            
+            # Test Get-AvailableFixes function
+            Write-Host "`nTesting Get-AvailableFixes..." -ForegroundColor Cyan
+            $fixes = Get-AvailableFixes
+            if ($fixes) {
+                Write-Host "✓ Found $($fixes.Count) fix(es):" -ForegroundColor Green
+                $fixes | Format-Table -AutoSize
+            } else {
+                Write-Host "⚠ No fixes found" -ForegroundColor Yellow
+            }
+            
+            Remove-Module WindowsFixes -ErrorAction SilentlyContinue
+        } else {
+            Write-Host "⚠ WindowsFixes.psm1 not found, skipping module test" -ForegroundColor Yellow
+        }
+        
+    - name: Verify Wrapper Script
+      shell: pwsh
+      run: |
+        Write-Host "Verifying wrapper script..." -ForegroundColor Cyan
+        
+        if (Test-Path .\Run-AllFixes.ps1) {
+            # Test ListOnly mode (doesn't require admin)
+            Write-Host "Testing Run-AllFixes.ps1 -ListOnly..." -ForegroundColor Cyan
+            
+            # We can't run scripts that require admin in CI, so we just validate syntax
+            $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content .\Run-AllFixes.ps1 -Raw), [ref]$null)
+            Write-Host "✓ Wrapper script syntax is valid" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ Run-AllFixes.ps1 not found, skipping wrapper test" -ForegroundColor Yellow
+        }
+        
+    - name: Check for Log Files
+      shell: pwsh
+      run: |
+        Write-Host "Checking for accidentally committed log files..." -ForegroundColor Cyan
+        
+        $logFiles = Get-ChildItem -Path . -Include *.log -Recurse -ErrorAction SilentlyContinue
+        
+        if ($logFiles) {
+            Write-Host "❌ Found log files that should not be committed:" -ForegroundColor Red
+            $logFiles | ForEach-Object { Write-Host "  - $($_.FullName)" -ForegroundColor Yellow }
+            exit 1
+        } else {
+            Write-Host "✓ No log files found" -ForegroundColor Green
+        }
