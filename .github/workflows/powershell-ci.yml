@@ -11,6 +11,8 @@ jobs:
   lint-and-test:
     name: Lint PowerShell Scripts
     runs-on: windows-latest
+    permissions:
+      contents: read
     
     steps:
     - name: Checkout repository
