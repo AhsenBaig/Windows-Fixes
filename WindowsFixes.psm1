@@ -88,10 +88,11 @@ function Invoke-Fix0x80244018 {
 
 <#
 .SYNOPSIS
-    Gets all available fix scripts
+    Gets available fix scripts
     
 .DESCRIPTION
     Lists all available Windows fix scripts in the module.
+    Returns information about each fix script including name, path, and description.
     
 .EXAMPLE
     Get-AvailableFix

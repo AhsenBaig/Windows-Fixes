@@ -57,8 +57,8 @@ param(
 
 # Color-coded logging
 function Write-Info($msg)  { Write-Information "[INFO]  $msg" -InformationAction Continue }
-function Write-Warn($msg)  { Write-Warning "[WARN]  $msg" }
-function Write-ErrorMsg($msg) { Write-Error "[ERROR] $msg" }
+function Write-Warn($msg)  { Write-Warning $msg }
+function Write-ErrorMsg($msg) { Write-Error $msg }
 function Write-Success($msg) { Write-Information "[OK]    $msg" -InformationAction Continue }
 
 # Banner
