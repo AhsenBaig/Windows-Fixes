@@ -88,15 +88,16 @@ function Invoke-Fix0x80244018 {
 
 <#
 .SYNOPSIS
-    Gets all available fix scripts
+    Gets available fix scripts
     
 .DESCRIPTION
     Lists all available Windows fix scripts in the module.
+    Returns information about each fix script including name, path, and description.
     
 .EXAMPLE
-    Get-AvailableFixes
+    Get-AvailableFix
 #>
-function Get-AvailableFixes {
+function Get-AvailableFix {
     [CmdletBinding()]
     param()
     
@@ -111,7 +112,8 @@ function Get-AvailableFixes {
                     $synopsis = $matches[1].Trim()
                 }
             } catch {
-                # Ignore errors reading synopsis
+                # Ignore errors reading synopsis - file may be inaccessible or malformed
+                Write-Verbose "Could not read synopsis from $($_.Name): $_"
             }
             
             [PSCustomObject]@{
@@ -127,5 +129,5 @@ function Get-AvailableFixes {
 Export-ModuleMember -Function @(
     'Invoke-Fix0x800f0915',
     'Invoke-Fix0x80244018',
-    'Get-AvailableFixes'
+    'Get-AvailableFix'
 )

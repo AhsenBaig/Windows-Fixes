@@ -45,6 +45,7 @@ param(
     [switch]$All,
     
     [Parameter(ParameterSetName='Interactive')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification='Parameter used to define parameter set')]
     [switch]$Interactive,
     
     [Parameter(ParameterSetName='DryRun')]
@@ -55,15 +56,15 @@ param(
 )
 
 # Color-coded logging
-function Write-Info($msg)  { Write-Host "[INFO]  $msg" -ForegroundColor Cyan }
-function Write-Warn($msg)  { Write-Host "[WARN]  $msg" -ForegroundColor Yellow }
-function Write-ErrorMsg($msg) { Write-Host "[ERROR] $msg" -ForegroundColor Red }
-function Write-Success($msg) { Write-Host "[OK]    $msg" -ForegroundColor Green }
+function Write-Info($msg)  { Write-Information "[INFO]  $msg" -InformationAction Continue }
+function Write-Warn($msg)  { Write-Warning $msg }
+function Write-ErrorMsg($msg) { Write-Error $msg }
+function Write-Success($msg) { Write-Information "[OK]    $msg" -InformationAction Continue }
 
 # Banner
-Write-Host "`n======================================" -ForegroundColor Magenta
-Write-Host "  Windows-Fixes - Run All Fixes" -ForegroundColor Magenta
-Write-Host "======================================`n" -ForegroundColor Magenta
+Write-Information "`n======================================" -InformationAction Continue
+Write-Information "  Windows-Fixes - Run All Fixes" -InformationAction Continue
+Write-Information "======================================`n" -InformationAction Continue
 
 # Get all fix scripts
 $srcPath = Join-Path $PSScriptRoot "src"
@@ -75,8 +76,8 @@ if ($fixScripts.Count -eq 0) {
 }
 
 Write-Info "Found $($fixScripts.Count) fix script(s):"
-$fixScripts | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Gray }
-Write-Host ""
+$fixScripts | ForEach-Object { Write-Information "  - $($_.Name)" -InformationAction Continue }
+Write-Information "" -InformationAction Continue
 
 # Handle ListOnly mode (doesn't require admin)
 if ($ListOnly) {
@@ -87,12 +88,12 @@ if ($ListOnly) {
         if ($synopsis) {
             $description = ($synopsis.Context.PostContext | Where-Object { $_ -match '\S' } | Select-Object -First 1).Trim()
         }
-        Write-Host "`n$($script.BaseName):" -ForegroundColor Cyan
+        Write-Information "`n$($script.BaseName):" -InformationAction Continue
         if ($description) {
-            Write-Host "  $description" -ForegroundColor Gray
+            Write-Information "  $description" -InformationAction Continue
         }
     }
-    Write-Host ""
+    Write-Information "" -InformationAction Continue
     exit 0
 }
 
@@ -102,6 +103,9 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     Write-ErrorMsg "This script must be run as Administrator."
     exit 1
 }
+
+# Determine mode - Interactive is default when no other mode specified
+$isInteractiveMode = $Interactive -or ($PSCmdlet.ParameterSetName -eq 'Interactive')
 
 # Handle All mode
 if ($All) {
@@ -120,7 +124,7 @@ if ($All) {
         } catch {
             Write-ErrorMsg "Failed to run $($script.Name): $_"
         }
-        Write-Host ""
+        Write-Information "" -InformationAction Continue
     }
     Write-Success "All fixes completed."
     exit 0
@@ -143,14 +147,16 @@ if ($DryRun) {
         } else {
             Write-Warn "$($script.Name) does not support DryRun mode"
         }
-        Write-Host ""
+        Write-Information "" -InformationAction Continue
     }
     exit 0
 }
 
 # Interactive mode (default)
-Write-Info "Interactive mode - Select fixes to run:"
-Write-Host ""
+if ($isInteractiveMode) {
+    Write-Info "Interactive mode - Select fixes to run:"
+}
+Write-Information "" -InformationAction Continue
 
 $selectedScripts = @()
 foreach ($script in $fixScripts) {
@@ -165,9 +171,9 @@ if ($selectedScripts.Count -eq 0) {
     exit 0
 }
 
-Write-Host ""
+Write-Information "" -InformationAction Continue
 Write-Info "Running $($selectedScripts.Count) selected fix(es)..."
-Write-Host ""
+Write-Information "" -InformationAction Continue
 
 foreach ($script in $selectedScripts) {
     Write-Info "Running $($script.Name)..."
@@ -177,7 +183,7 @@ foreach ($script in $selectedScripts) {
     } catch {
         Write-ErrorMsg "Failed to run $($script.Name): $_"
     }
-    Write-Host ""
+    Write-Information "" -InformationAction Continue
 }
 
 Write-Success "All selected fixes completed."
