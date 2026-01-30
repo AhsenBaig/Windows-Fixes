@@ -103,10 +103,21 @@ function Get-AvailableFixes {
     $srcPath = Join-Path $scriptPath "src"
     if (Test-Path $srcPath) {
         Get-ChildItem -Path $srcPath -Filter "Fix_*.ps1" | ForEach-Object {
+            $synopsis = ""
+            try {
+                # Try to extract synopsis from comment-based help
+                $content = Get-Content $_.FullName -Raw
+                if ($content -match '\.SYNOPSIS\s+([^\r\n]+)') {
+                    $synopsis = $matches[1].Trim()
+                }
+            } catch {
+                # Ignore errors reading synopsis
+            }
+            
             [PSCustomObject]@{
                 Name = $_.BaseName
                 Path = $_.FullName
-                Description = (Get-Help $_.FullName -ErrorAction SilentlyContinue).Synopsis
+                Description = $synopsis
             }
         }
     }

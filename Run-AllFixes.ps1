@@ -65,13 +65,6 @@ Write-Host "`n======================================" -ForegroundColor Magenta
 Write-Host "  Windows-Fixes - Run All Fixes" -ForegroundColor Magenta
 Write-Host "======================================`n" -ForegroundColor Magenta
 
-# Admin check
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
-    [Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-ErrorMsg "This script must be run as Administrator."
-    exit 1
-}
-
 # Get all fix scripts
 $srcPath = Join-Path $PSScriptRoot "src"
 $fixScripts = Get-ChildItem -Path $srcPath -Filter "Fix_*.ps1" | Sort-Object Name
@@ -85,7 +78,7 @@ Write-Info "Found $($fixScripts.Count) fix script(s):"
 $fixScripts | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Gray }
 Write-Host ""
 
-# Handle ListOnly mode
+# Handle ListOnly mode (doesn't require admin)
 if ($ListOnly) {
     Write-Info "Available fixes:"
     foreach ($script in $fixScripts) {
@@ -103,13 +96,26 @@ if ($ListOnly) {
     exit 0
 }
 
+# Admin check (required for all other modes)
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
+    [Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-ErrorMsg "This script must be run as Administrator."
+    exit 1
+}
+
 # Handle All mode
 if ($All) {
     Write-Warn "Running all fixes in Force mode..."
     foreach ($script in $fixScripts) {
         Write-Info "Running $($script.Name)..."
         try {
-            & $script.FullName -Force
+            # Check if script supports -Force parameter
+            $scriptContent = Get-Content $script.FullName -Raw
+            if ($scriptContent -match 'param\s*\([^)]*\[switch\]\$Force') {
+                & $script.FullName -Force
+            } else {
+                & $script.FullName
+            }
             Write-Success "Completed $($script.Name)"
         } catch {
             Write-ErrorMsg "Failed to run $($script.Name): $_"
@@ -147,8 +153,7 @@ Write-Info "Interactive mode - Select fixes to run:"
 Write-Host ""
 
 $selectedScripts = @()
-foreach ($i = 0; $i -lt $fixScripts.Count; $i++) {
-    $script = $fixScripts[$i]
+foreach ($script in $fixScripts) {
     $choice = Read-Host "Run $($script.Name)? (Y/N)"
     if ($choice -eq 'Y' -or $choice -eq 'y') {
         $selectedScripts += $script

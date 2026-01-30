@@ -21,8 +21,8 @@ A collection of automated PowerShell scripts to fix common Windows update and sy
 ### Option 2: Use the Wrapper Script
 
 ```powershell
-# Interactive mode - select which fixes to run
-.\Run-AllFixes.ps1 -Interactive
+# Interactive mode - select which fixes to run (default)
+.\Run-AllFixes.ps1
 
 # Run all fixes automatically
 .\Run-AllFixes.ps1 -All
@@ -33,6 +33,8 @@ A collection of automated PowerShell scripts to fix common Windows update and sy
 # List available fixes
 .\Run-AllFixes.ps1 -ListOnly
 ```
+
+**Note**: The wrapper script uses mutually exclusive modes - you can only use one mode at a time.
 
 ### Option 3: Import as PowerShell Module
 
@@ -160,14 +162,15 @@ Remove-Module WindowsFixes
 
 ## 🤖 Wrapper Script Features
 
-The `Run-AllFixes.ps1` wrapper provides orchestration capabilities:
+The `Run-AllFixes.ps1` wrapper provides orchestration capabilities with four mutually exclusive modes:
 
-- **Interactive Mode**: Choose which fixes to run
-- **All Mode**: Run all fixes sequentially with Force mode
-- **DryRun Mode**: Preview actions without making changes
-- **ListOnly Mode**: Display available fixes
+- **Default (Interactive) Mode**: Choose which fixes to run via prompts
+- **All Mode**: Run all fixes sequentially (uses -Force where supported)
+- **DryRun Mode**: Preview actions without making changes (only for scripts that support it)
+- **ListOnly Mode**: Display available fixes without running them
 - **Color-coded output**: Easy to read logs
 - **Error handling**: Continues even if one fix fails
+- **No admin required for ListOnly**: Other modes require Administrator privileges
 
 ## 📝 Logging
 
